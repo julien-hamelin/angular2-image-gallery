@@ -8,6 +8,7 @@ var argv = require('minimist')(process.argv.slice(2));
 var one = require('onecolor')
 
 var sortFunction;
+var sortReverse = false;
 var projectRoot = appRoot.path;
 var toConvertAbsoluteBasePath;
 var assetsAbsoluteBasePath = projectRoot + "/src/assets/img/gallery/";
@@ -76,6 +77,10 @@ function init() {
     if (argv['c']) {
         sortFunction = sortByPrimaryColor;
         console.log('Going to sort images by color (experimental).');
+    }
+    if (argv['r']) {
+      sortReverse = true;
+      console.log('The sort direction will be reversed.');
     }
 
     convert();
@@ -205,7 +210,7 @@ function provideImageInformation(imageMetadataArray, imgMetadataIdx, resolutions
 
                         if (imageMetadataArray.length - 1 == imgMetadataIdx) {
                             console.log('...done (information)');
-                            sortFunction();
+                            sortFunction(sortReverse);
                         }
                         else {
                             provideImageInformation(imageMetadataArray, ++imgMetadataIdx, resolutions, 0);
@@ -218,16 +223,16 @@ function provideImageInformation(imageMetadataArray, imgMetadataIdx, resolutions
         });
 }
 
-function sortByCreationDate() {
+function sortByCreationDate(sortReverse) {
     console.log('\nSorting images by actual creation time...');
 
     imageMetadataArray.sort(function (a, b) {
         if (a.date > b.date) {
-            return 1;
+            return sortReverse ? -1 : 1;
         } else if (a.date == b.date) {
             return 0;
         } else {
-            return -1;
+            return sortReverse ? 1 : -1;
         }
     });
     console.log('...done (sorting)');
@@ -235,16 +240,16 @@ function sortByCreationDate() {
     saveMetadataFile(imageMetadataArray);
 }
 
-function sortByFileName() {
+function sortByFileName(sortReverse) {
     console.log('\nSorting images by file name...');
 
     imageMetadataArray.sort(function (a, b) {
         if (a.name > b.name) {
-            return 1;
+          return sortReverse ? -1 : 1;
         } else if (a.name == b.name) {
             return 0;
         } else {
-            return -1;
+          return sortReverse ? 1 : -1;
         }
     });
     console.log('...done (sorting)');
@@ -252,7 +257,7 @@ function sortByFileName() {
     saveMetadataFile(imageMetadataArray);
 }
 
-function sortByPrimaryColor() {
+function sortByPrimaryColor(sortReverse) {
     console.log('\nSorting images by primary color...');
 
     var iterations = 8;
@@ -269,11 +274,7 @@ function sortByPrimaryColor() {
             var colorB = one(b['dominantColor']);
             var luminanceA = calcRelativeLuminance(colorA);
             var luminanceB = calcRelativeLuminance(colorB);
-            if (i % 2 == 1) {
-                return luminanceA - luminanceB;
-            } else {
-                return luminanceB - luminanceA;
-            }
+            return ((i % 2 == 1) && !sortReverse) ? (luminanceA - luminanceB) : (luminanceB - luminanceA);
         });
 
         sortedColorsArray[i] = specificColorSpectrum;
